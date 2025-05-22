@@ -91,11 +91,3 @@ jobs:
             ${{ env.DOCKERHUB_REPO }}:latest
           build-args: |
             VERSION=${{ env.VERSION }}
-
-      - name: Purge workflow runs
-        if: always()
-        uses: MattiasBuelens/action-gh-workflow-purge@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          age: 7d
-          status: all
