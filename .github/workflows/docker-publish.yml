@@ -5,13 +5,13 @@ on:
     branches:
       - main
     paths:
-      - 'version'  
-  workflow_dispatch:
+      - 'version'  # 只有当 'version' 文件发生更改时才触发
+  workflow_dispatch:  # 允许手动触发
 
 # 定义全局变量
 env:
   DOCKERHUB_REPO: docker.io/${{ secrets.DOCKERHUB_USERNAME }}/rapidocr_api
-  GHCR_REPO: ghcr.io/streetwind/rapidocr_api
+  GHCR_REPO: ghcr.io/${{ secrets.GHCR_USERNAME }}/rapidocr_api
 
 jobs:
   build-and-push:
@@ -20,6 +20,7 @@ jobs:
       contents: read
       packages: write
       id-token: write
+      actions: write
     strategy:
       matrix:
         platform: [linux/amd64, linux/arm64]
@@ -84,3 +85,46 @@ jobs:
             ${{ env.DOCKERHUB_REPO }}:latest
           build-args: |
             VERSION=${{ env.VERSION }}
+
+      - name: Clean up old workflow runs
+        if: always()  # 总是执行，无论之前的步骤是否成功
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const owner = context.repo.owner
+            const repo = context.repo.repo
+            const workflow_id = context.workflow
+
+            // 删除多少天前的 runs
+            const days = 7
+            const cutoff = new Date()
+            cutoff.setDate(cutoff.getDate() - days)
+            const cutoffEpoch = cutoff.getTime()
+
+            console.log(`Deleting workflow runs older than ${days} days (${cutoff.toISOString()})`)
+
+            // 获取 workflow runs
+            let runs = await github.rest.actions.listWorkflowRuns({
+              owner: owner,
+              repo: repo,
+              workflow_id: workflow_id,
+              status: 'success',  // 只删除成功的 runs
+              per_page: 100
+            });
+
+            // 循环删除旧的 runs
+            for (const run of runs.data.workflow_runs) {
+              const runEpoch = new Date(run.created_at).getTime()
+              if (runEpoch < cutoffEpoch) {
+                console.log(`Deleting run ${run.id} created at ${run.created_at}`)
+                try {
+                  await github.rest.actions.deleteWorkflowRun({
+                    owner: owner,
+                    repo: repo,
+                    run_id: run.id,
+                  })
+                } catch (e) {
+                  console.error(`Failed to delete run ${run.id}: ${e}`)
+                }
+              }
+            }
