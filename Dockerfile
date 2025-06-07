@@ -10,10 +10,10 @@ WORKDIR /app
 #     sed -i 's|security.debian.org/debian-security|mirrors.aliyun.com/debian-security|g' /etc/apt/sources.list
 
 # 安装vim，如果不需要临时修改容器文件，此步骤可以删
-RUN apt-get update &&
-    apt-get install -y --no-install-recommends vim &&
-    apt-get clean &&
-    rm -rf /var/lib/apt/lists/*
+#RUN apt-get update &&
+#    apt-get install -y --no-install-recommends vim &&
+#    apt-get clean &&
+#    rm -rf /var/lib/apt/lists/*
 
 # 安装运行环境
 RUN set -eux
