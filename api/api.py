@@ -26,6 +26,10 @@ else:
         "Please install one of [rapidocr_onnxruntime,rapidocr-paddle,rapidocr-openvino]"
     )
 
+from starlette.formparsers import MultiPartParser
+
+MultiPartParser.max_part_size = 10 * 1024 * 1024  # 10MB
+MultiPartParser.max_file_size = 20 * 1024 * 1024   # 20MB
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 log = logging.getLogger("uvicorn")
